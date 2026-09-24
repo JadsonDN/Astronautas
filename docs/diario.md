@@ -6,13 +6,13 @@ com a IA. Cole só os pedidos que você enviou.
 ## Ambiente
 
 - Versão do OpenCode (`opencode --version`):
-- Modelo usado:
+- Modelo usado:  opencode zen -- Big Pickle
 
 ## Parte 1: antes de programar
 
 - O que cada classe guarda:
 - O que acontece em `LANCAR_VOO`, em palavras:
-- Uma dúvida que eu tinha antes de começar:
+- Uma dúvida que eu tinha antes de começar: eu estave me duvida se era para todas as classes serem implementadas dentro de main.cpp, por conta das notas que me fizeram entender isso, fiz dessa forma, mas acredito agora que essa nao era a ideia.
 
 ## Parte 1: uso de IA para entender algo
 
