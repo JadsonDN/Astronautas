@@ -10,8 +10,9 @@ com a IA. Cole só os pedidos que você enviou.
 
 ## Parte 1: antes de programar
 
-- O que cada classe guarda:
-- O que acontece em `LANCAR_VOO`, em palavras:
+- O que cada classe guarda: 
+  astronauta guarda uma lista de todos os astronautas alem de guardar todos os dados dos astronautas, e se esta vivo e tambem disponivel. ja no voo guarda as informaçoes dos voos alem de um vetor com todos os cpfs dos astronaltas e ocorre as checagens de adiçao ou exclusao dos seus cpfs. A agencia é o coraçao do codgo, tendo dois vetores de armazemamento de astronautas e de voos, funçoes para lidar com as demandas gerais go projeto, e onde fica os avisos de erro ou de acerto.
+- O que acontece em `LANCAR_VOO`, em palavras: a funçao que literalmente lança o voo, checando os estados do voo e de todos os cpfs ligados a astronautas registrados nesse voo, e mudando os seus estados. 
 - Uma dúvida que eu tinha antes de começar: eu estave me duvida se era para todas as classes serem implementadas dentro de main.cpp, por conta das notas que me fizeram entender isso, fiz dessa forma, mas acredito agora que essa nao era a ideia.
 
 ## Parte 1: uso de IA para entender algo
@@ -36,11 +37,41 @@ com a IA. Cole só os pedidos que você enviou.
 
 ## Missão 2: SALVAR e CARREGAR
 
-- Primeira mensagem:
+- Primeira mensagem:"dado o meu codgo ate agora em main.cpp como se poderia adicionar uma funçao de salvar e uma de carregar os dados de um arquivo .txt" queria ter uma ideia de qual seria a abordagem sugerida pela ia, e se ela iria conseguir analisar por si propria com esse nivel de abstraçao no pedido.
 - O plano, resumido:
+#include <fstream> no topo, para ter ofstream e ifstream adicionado.
+Em Astronauta, criar void restaurar(bool v, bool d) que escreve direto em vivo e disponivel, ja que hoje não têm outro jeito de voltar do arquivo.
+Em Voo, criar void restaurarEstado(string novoEstado) pois o estado é private e só muda por lancar()/explodir()/finalizar() mas a lista de CPFs já tem adicionarAstronauta, que é público e não valida nada, então serve para recarregar.
+Em Agencia, criar string salvar(string nomeArquivo) e string carregar(string nomeArquivo) que gravam/leem o arquivo inteiro e devolvem as mensagens OK:/ERRO:; no carregar, se o ifstream não abrir, devolve o ERRO e não limpa nada.
+E em main(), criar os ramos SALVAR e CARREGAR, lendo o nome com cin >>.
+
 - O formato do arquivo (cole cinco linhas do `dados_teste.txt`):
+"
+A 111 30 1 1 Ana Maria
+A 222 35 0 0 Bruno Costa
+A 333 28 1 1 Carla Souza
+V 10 1 111 finalizado com sucesso
+V 20 1 222 finalizado com explosao
+V 30 1 333 planejado
+"
 - Resultado de `testar.sh missao2` e de `testar.sh parte1`:
-- Precisei refazer? O que mudou no pedido:
+"
+$ bash testes/testar.sh missao2
+OK    01_salvar
+OK    02_carregar
+OK    03_arquivo_inexistente
+3 de 3 testes passaram.
+
+$ bash testes/testar.sh parte1
+OK    01_cadastros
+OK    02_passageiros_planejados
+OK    03_lancamento_finalizacao
+OK    04_explosao_e_mortes
+OK    05_operacoes_invalidas
+OK    06_cenario_completo
+6 de 6 testes passaram.
+"
+- Precisei refazer? O que mudou no pedido: nao precisei refazer
 
 ## Missão 3: RELATORIO
 

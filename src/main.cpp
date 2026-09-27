@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -56,6 +57,10 @@ class Astronauta {
                 disponivel = false;
             }
         } // fica morto e indisponivel
+        void restaurar(bool v, bool d){
+            vivo = v;
+            disponivel = d;
+        } // so para recarregar do arquivo
 };
 
 class Voo {
@@ -109,6 +114,9 @@ class Voo {
         void finalizar(){
             estado = "finalizado com sucesso";
         }
+        void restaurarEstado(string novoEstado){
+            estado = novoEstado;
+        } // so para recarregar do arquivo
 };
 
 class Agencia {
@@ -354,6 +362,72 @@ class Agencia {
                 cout << "(nenhum voo)" << endl;
             } 
         }
+        string salvar(string nomeArquivo){
+            ofstream arq(nomeArquivo);
+            if(!arq.is_open()){
+                return "ERRO: nao foi possivel salvar em " + nomeArquivo;
+            }
+            // A cpf idade vivo disponivel nome
+            for(int i=0; i<(int)astronautas.size(); i++){
+                arq << "A " << astronautas[i].getCpf() << " " << astronautas[i].getIdade() << " ";
+                arq << (astronautas[i].estaVivo() ? 1 : 0) << " ";
+                arq << (astronautas[i].estaDisponivel() ? 1 : 0) << " ";
+                arq << astronautas[i].getNome() << endl;
+            }
+            // V codigo quantidade cpfs estado
+            for(int j=0; j<(int)voos.size(); j++){
+                int qtd = voos[j].getQuantidadeAstronautas();
+                arq << "V " << voos[j].getCodigo() << " " << qtd;
+                for(int k=0; k<qtd; k++){
+                    arq << " " << voos[j].getCpf(k);
+                }
+                arq << " " << voos[j].getEstado() << endl;
+            }
+            arq.close();
+            if(!arq){
+                return "ERRO: nao foi possivel salvar em " + nomeArquivo;
+            }
+            return "OK: dados salvos em " + nomeArquivo;
+        }
+        string carregar(string nomeArquivo){
+            ifstream arq(nomeArquivo);
+            if(!arq.is_open()){
+                return "ERRO: nao foi possivel carregar de " + nomeArquivo;
+            } // arquivo nao abriu: os dados atuais continuam como estavam
+            astronautas.clear();
+            voos.clear();
+            char tipo;
+            while(arq >> tipo){
+                if(tipo == 'A'){
+                    string cpf, nome;
+                    int idade, vivo, disponivel;
+                    arq >> cpf >> idade >> vivo >> disponivel;
+                    getline(arq >> ws, nome);
+                    astronautas.push_back(Astronauta(cpf, nome, idade));
+                    int ultimo = (int)astronautas.size() - 1;
+                    astronautas[ultimo].restaurar(vivo == 1, disponivel == 1);
+                } else if(tipo == 'V'){
+                    int codigo, qtd;
+                    string estado;
+                    arq >> codigo >> qtd;
+                    vector<string> cpfs;
+                    for(int i=0; i<qtd; i++){
+                        string cpf;
+                        arq >> cpf;
+                        cpfs.push_back(cpf);
+                    }
+                    getline(arq >> ws, estado);
+                    Voo voo(codigo);
+                    voo.restaurarEstado(estado);
+                    for(int i=0; i<(int)cpfs.size(); i++){
+                        voo.adicionarAstronauta(cpfs[i]);
+                    }
+                    voos.push_back(voo);
+                }
+            }
+            arq.close();
+            return "OK: dados carregados de " + nomeArquivo;
+        }
 };
 
 int main() {
@@ -408,6 +482,14 @@ int main() {
             string cpf;
             cin >> cpf;
             agencia.historico(cpf);
+        } else if (comando == "SALVAR") {
+            string arquivo;
+            cin >> arquivo;
+            cout << agencia.salvar(arquivo) << endl;
+        } else if (comando == "CARREGAR") {
+            string arquivo;
+            cin >> arquivo;
+            cout << agencia.carregar(arquivo) << endl;
         } else {
             cout << "ERRO: comando desconhecido " << comando << endl;
         }
