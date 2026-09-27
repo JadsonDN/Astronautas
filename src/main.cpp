@@ -147,6 +147,15 @@ class Agencia {
             }
             return -1;
         }
+        int contarVoosLancados(string cpf){
+            int total = 0;
+            for(int j=0; j<(int)voos.size(); j++){
+                if(voos[j].getEstado() != "planejado" && voos[j].temAstronauta(cpf)){
+                    total++;
+                }
+            }
+            return total;
+        }
     public:
         string cadastrarAstronauta(string cpf, string nome, int idade){
             if(buscarAstronauta(cpf) != -1){
@@ -362,6 +371,61 @@ class Agencia {
                 cout << "(nenhum voo)" << endl;
             } 
         }
+        void relatorio(){
+            int planejados = 0, emCurso = 0, sucesso = 0, explosao = 0;
+            for(int i=0; i<(int)voos.size(); i++){
+                string estado = voos[i].getEstado();
+                if(estado == "planejado"){
+                    planejados++;
+                } else if(estado == "em curso"){
+                    emCurso++;
+                } else if(estado == "finalizado com sucesso"){
+                    sucesso++;
+                } else {
+                    explosao++;
+                }
+            }
+            int cadastrados = (int)astronautas.size();
+            int vivos = 0, mortos = 0;
+            for(int i=0; i<(int)astronautas.size(); i++){
+                if(astronautas[i].estaVivo()){
+                    vivos++;
+                } else {
+                    mortos++;
+                }
+            }
+            int melhor = -1;
+            int experiencia = 0;
+            for(int i=0; i<(int)astronautas.size(); i++){
+                int atual = contarVoosLancados(astronautas[i].getCpf());
+                if(atual > experiencia){
+                    experiencia = atual;
+                    melhor = i;
+                }
+            }
+            cout << "RELATORIO" << endl;
+            cout << "voos planejados: " << planejados << endl;
+            cout << "voos em curso: " << emCurso << endl;
+            cout << "voos finalizados com sucesso: " << sucesso << endl;
+            cout << "voos finalizados com explosao: " << explosao << endl;
+            cout << "astronautas cadastrados: " << cadastrados << endl;
+            cout << "astronautas vivos: " << vivos << endl;
+            cout << "astronautas mortos: " << mortos << endl;
+            cout << "astronauta mais experiente: ";
+            if(experiencia == 0){
+                cout << "(nenhum)" << endl;
+            } else {
+                cout << astronautas[melhor].getCpf() << " " << astronautas[melhor].getNome()
+                    << " (voos lancados: " << experiencia << ")" << endl;
+            }
+            cout << "taxa de sucesso: ";
+            int finalizados = sucesso + explosao;
+            if(finalizados == 0){
+                cout << "(nenhum voo finalizado)" << endl;
+            } else {
+                cout << (sucesso * 100 / finalizados) << "%" << endl;
+            }
+        }
         string salvar(string nomeArquivo){
             ofstream arq(nomeArquivo);
             if(!arq.is_open()){
@@ -482,6 +546,8 @@ int main() {
             string cpf;
             cin >> cpf;
             agencia.historico(cpf);
+        } else if (comando == "RELATORIO") {
+            agencia.relatorio();
         } else if (comando == "SALVAR") {
             string arquivo;
             cin >> arquivo;
