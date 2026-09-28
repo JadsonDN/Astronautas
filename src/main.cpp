@@ -18,6 +18,7 @@ class Astronauta {
         int idade;
         bool vivo;
         bool disponivel;
+        bool ehCapitao;
     public:
         Astronauta(string cpf, string nome, int idade){
             this->cpf = cpf;
@@ -25,6 +26,7 @@ class Astronauta {
             this->idade = idade;
             this->vivo = true;
             this->disponivel = true;
+            this->ehCapitao = false;
         }
         string getCpf(){
             return cpf;
@@ -57,9 +59,16 @@ class Astronauta {
                 disponivel = false;
             }
         } // fica morto e indisponivel
-        void restaurar(bool v, bool d){
+        bool eCapitao(){
+            return ehCapitao;
+        }
+        void promover(){
+            ehCapitao = true;
+        } // Classification por missao bem-sucedida
+        void restaurar(bool v, bool d, bool c){
             vivo = v;
             disponivel = d;
+            ehCapitao = c;
         } // so para recarregar do arquivo
 };
 
@@ -68,11 +77,15 @@ class Voo {
         int codigo;
         string estado;
         vector<string> cpfs;
+        string cpfCapitao;
+        bool capitaoSemExperiencia;
     public:
         Voo(int codigo){
             this->codigo = codigo;
             this->estado = "planejado";
             cpfs = {};
+            cpfCapitao = "";
+            capitaoSemExperiencia = false;
         }
         int getCodigo(){
             return codigo;
@@ -93,6 +106,19 @@ class Voo {
                 }
             }
             return false;
+        }
+        bool temCapitao(){
+            return cpfCapitao != "";
+        }
+        string getCpfCapitao(){
+            return cpfCapitao;
+        }
+        bool capitaoFoiEscolhidoSemExperiencia(){
+            return capitaoSemExperiencia;
+        }
+        void designarCapitao(string cpf, bool semExperiencia){
+            cpfCapitao = cpf;
+            capitaoSemExperiencia = semExperiencia;
         }
         void adicionarAstronauta(string cpf){
             cpfs.push_back(cpf);
@@ -116,6 +142,10 @@ class Voo {
         }
         void restaurarEstado(string novoEstado){
             estado = novoEstado;
+        } // so para recarregar do arquivo
+        void restaurarCapitao(string cpf, bool semExperiencia){
+            cpfCapitao = cpf;
+            capitaoSemExperiencia = semExperiencia;
         } // so para recarregar do arquivo
 };
 
@@ -156,6 +186,75 @@ class Agencia {
             }
             return total;
         }
+        int contarVoosComSucesso(string cpf){
+            int total = 0;
+            for(int j=0; j<(int)voos.size(); j++){
+                if(voos[j].getEstado() == "finalizado com sucesso" && voos[j].temAstronauta(cpf)){
+                    total++;
+                }
+            }
+            return total;
+        }
+        int contarVoosConcluidos(string cpf){
+            int total = 0;
+            for(int j=0; j<(int)voos.size(); j++){
+                string estado = voos[j].getEstado();
+                if((estado == "finalizado com sucesso" || estado == "finalizado com explosao")
+                   && voos[j].temAstronauta(cpf)){
+                    total++;
+                }
+            }
+            return total;
+        }
+        bool podeSerCapitao(string cpf){
+            int buscaA = buscarAstronauta(cpf);
+            if(astronautas[buscaA].eCapitao()){
+                return true;
+            }
+            return contarVoosComSucesso(cpf) >= 2;
+        } // ja é capitao ou tem 2 ou mais voos com sucesso
+        bool astronautaMelhorQue(string cpfA, string cpfB){
+            int sucessosA = contarVoosComSucesso(cpfA);
+            int sucessosB = contarVoosComSucesso(cpfB);
+            if(sucessosA != sucessosB){
+                return sucessosA > sucessosB;
+            }
+            int concluidosA = contarVoosConcluidos(cpfA);
+            int concluidosB = contarVoosConcluidos(cpfB);
+            if(sucessosA * concluidosB != sucessosB * concluidosA){
+                return sucessosA * concluidosB > sucessosB * concluidosA;
+            }
+            int buscaA = buscarAstronauta(cpfA);
+            int buscaB = buscarAstronauta(cpfB);
+            if(astronautas[buscaA].getIdade() != astronautas[buscaB].getIdade()){
+                return astronautas[buscaA].getIdade() > astronautas[buscaB].getIdade();
+            }
+            return false;
+        } // escata: mais voos com sucesso, taxa de sucesso, idade
+        string escolherCapitao(int indiceVoo){
+            int qtd = voos[indiceVoo].getQuantidadeAstronautas();
+            int melhor = -1;
+            for(int i=0; i<qtd; i++){
+                string cpf = voos[indiceVoo].getCpf(i);
+                if(!podeSerCapitao(cpf)){
+                    continue;
+                }
+                if(melhor == -1 || astronautaMelhorQue(cpf, voos[indiceVoo].getCpf(melhor))){
+                    melhor = i;
+                }
+            }
+            if(melhor == -1){
+                for(int i=0; i<qtd; i++){
+                    if(melhor == -1 || astronautaMelhorQue(voos[indiceVoo].getCpf(i), voos[indiceVoo].getCpf(melhor))){
+                        melhor = i;
+                    }
+                }
+            } // ninguem pode ser capitao: a escata roda com a tripulacao toda
+            if(melhor == -1){
+                return "";
+            }
+            return voos[indiceVoo].getCpf(melhor);
+        } // devolve o cpf do capitao, ou "" se nao ha tripulacao
     public:
         string cadastrarAstronauta(string cpf, string nome, int idade){
             if(buscarAstronauta(cpf) != -1){
@@ -231,6 +330,13 @@ class Agencia {
                     return "ERRO: astronauta " +cpf+ " esta indisponivel";
                 }
             } 
+            if(!voos[buscaV].temCapitao()){
+                string capitao = escolherCapitao(buscaV);
+                if(capitao != ""){
+                    bool semExperiencia = !podeSerCapitao(capitao);
+                    voos[buscaV].designarCapitao(capitao, semExperiencia);
+                }
+            } // ninguem designou: o capitao e escolhido aqui, sem imprimir nada
             voos[buscaV].lancar();
             for(int i=0; i<voos[buscaV].getQuantidadeAstronautas(); i++){
                 int buscaA = buscarAstronauta(voos[buscaV].getCpf(i));
@@ -266,7 +372,53 @@ class Agencia {
                 int buscaA = buscarAstronauta(voos[buscaV].getCpf(i));
                 astronautas[buscaA].desembarcar();
             } 
+            if(voos[buscaV].capitaoFoiEscolhidoSemExperiencia()){
+                int buscaA = buscarAstronauta(voos[buscaV].getCpfCapitao());
+                astronautas[buscaA].promover();
+            } // missao bem-sucedida promove o capitao escolhido sem experiencia
             return "OK: voo " + to_string(codigo) + " finalizado com sucesso";
+        }
+        string designarCapitao(string cpf, int codigo){
+            int buscaA = buscarAstronauta(cpf);
+            if(buscaA == -1){
+                return "ERRO: astronauta " + cpf + " nao cadastrado";
+            }
+            int buscaV = buscarVoo(codigo);
+            if(buscaV == -1){
+                return "ERRO: voo " + to_string(codigo) + " nao cadastrado";
+            }
+            if(voos[buscaV].getEstado() != "planejado"){
+                return "ERRO: voo " + to_string(codigo) + " nao esta planejado";
+            }
+            if(!astronautas[buscaA].estaVivo()){
+                return "ERRO: astronauta " + cpf + " esta morto";
+            }
+            if(!voos[buscaV].temAstronauta(cpf)){
+                return "ERRO: astronauta " + cpf + " nao esta no voo " + to_string(codigo);
+            }
+            if(voos[buscaV].temCapitao()){
+                return "ERRO: astronauta " + cpf + " ja e capitao do voo " + to_string(codigo);
+            }
+            bool semExperiencia = !podeSerCapitao(cpf);
+            voos[buscaV].designarCapitao(cpf, semExperiencia);
+            return "OK: capitao do voo " + to_string(codigo) + " e " + cpf + " "
+                   + astronautas[buscaA].getNome()
+                   + (semExperiencia ? " (sem experiencia)" : " (experiente)");
+        }
+        void mostrarCapitao(string cpf){
+            int buscaA = buscarAstronauta(cpf);
+            if(buscaA == -1){
+                cout << "ERRO: astronauta " << cpf << " nao cadastrado" << endl;
+                return;
+            }
+            int sucessos = contarVoosComSucesso(cpf);
+            if(podeSerCapitao(cpf)){
+                cout << "CAPITAO DE " << cpf << " " << astronautas[buscaA].getNome()
+                     << " (voos com sucesso: " << sucessos << ")" << endl;
+            } else {
+                cout << cpf << " " << astronautas[buscaA].getNome()
+                     << " nao e capitao (voos com sucesso: " << sucessos << ")" << endl;
+            }
         }
         void listarVoos(){
             cout << "LISTA DE VOOS" << endl;
@@ -431,20 +583,23 @@ class Agencia {
             if(!arq.is_open()){
                 return "ERRO: nao foi possivel salvar em " + nomeArquivo;
             }
-            // A cpf idade vivo disponivel nome
+            // A cpf idade vivo disponivel ehCapitao nome
             for(int i=0; i<(int)astronautas.size(); i++){
                 arq << "A " << astronautas[i].getCpf() << " " << astronautas[i].getIdade() << " ";
                 arq << (astronautas[i].estaVivo() ? 1 : 0) << " ";
                 arq << (astronautas[i].estaDisponivel() ? 1 : 0) << " ";
+                arq << (astronautas[i].eCapitao() ? 1 : 0) << " ";
                 arq << astronautas[i].getNome() << endl;
             }
-            // V codigo quantidade cpfs estado
+            // V codigo quantidade cpfs cpfCapitao semExperiencia estado
             for(int j=0; j<(int)voos.size(); j++){
                 int qtd = voos[j].getQuantidadeAstronautas();
                 arq << "V " << voos[j].getCodigo() << " " << qtd;
                 for(int k=0; k<qtd; k++){
                     arq << " " << voos[j].getCpf(k);
                 }
+                arq << " " << (voos[j].temCapitao() ? voos[j].getCpfCapitao() : "-");
+                arq << " " << (voos[j].capitaoFoiEscolhidoSemExperiencia() ? 1 : 0);
                 arq << " " << voos[j].getEstado() << endl;
             }
             arq.close();
@@ -464,15 +619,16 @@ class Agencia {
             while(arq >> tipo){
                 if(tipo == 'A'){
                     string cpf, nome;
-                    int idade, vivo, disponivel;
-                    arq >> cpf >> idade >> vivo >> disponivel;
+                    int idade, vivo, disponivel, capitao;
+                    arq >> cpf >> idade >> vivo >> disponivel >> capitao;
                     getline(arq >> ws, nome);
                     astronautas.push_back(Astronauta(cpf, nome, idade));
                     int ultimo = (int)astronautas.size() - 1;
-                    astronautas[ultimo].restaurar(vivo == 1, disponivel == 1);
+                    astronautas[ultimo].restaurar(vivo == 1, disponivel == 1, capitao == 1);
                 } else if(tipo == 'V'){
                     int codigo, qtd;
-                    string estado;
+                    string cpfCapitao, estado;
+                    int semExperiencia;
                     arq >> codigo >> qtd;
                     vector<string> cpfs;
                     for(int i=0; i<qtd; i++){
@@ -480,11 +636,15 @@ class Agencia {
                         arq >> cpf;
                         cpfs.push_back(cpf);
                     }
+                    arq >> cpfCapitao >> semExperiencia;
                     getline(arq >> ws, estado);
                     Voo voo(codigo);
                     voo.restaurarEstado(estado);
                     for(int i=0; i<(int)cpfs.size(); i++){
                         voo.adicionarAstronauta(cpfs[i]);
+                    }
+                    if(cpfCapitao != "-"){
+                        voo.restaurarCapitao(cpfCapitao, semExperiencia == 1);
                     }
                     voos.push_back(voo);
                 }
@@ -546,6 +706,15 @@ int main() {
             string cpf;
             cin >> cpf;
             agencia.historico(cpf);
+        } else if (comando == "CAPITAO") {
+            string cpf;
+            cin >> cpf;
+            agencia.mostrarCapitao(cpf);
+        } else if (comando == "DESIGNAR_CAPITAO") {
+            string cpf;
+            int codigo;
+            cin >> cpf >> codigo;
+            cout << agencia.designarCapitao(cpf, codigo) << endl;
         } else if (comando == "RELATORIO") {
             agencia.relatorio();
         } else if (comando == "SALVAR") {
