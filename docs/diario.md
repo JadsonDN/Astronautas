@@ -21,7 +21,7 @@ com a IA. Cole só os pedidos que você enviou.
 - O que aprendi: aprend sobre a funcinalidade dos metodos estaticos e como funiona o cpfs.erase(cpfs.begin() + i) que me deixou com duvida.
 
 ## Primeiro contato: revisão sem editar
-
+toda essa parte eu esquesci de fazer e pulei semquerer para a missão 1.
 - As três melhorias que a IA sugeriu, em uma linha cada:
 - A que escolhi e por quê:
 - O que mudou no código, e se os seis testes continuaram passando:
